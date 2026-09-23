@@ -1,4 +1,5 @@
 import type { ServerConfig, ServerState } from '../../../shared/types'
+import logo from '../assets/logo.png'
 
 interface Props {
   servers: ServerConfig[]
@@ -18,7 +19,10 @@ export default function ServerList({
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
-        <h1>DevStationnari</h1>
+        <div className="brand">
+          <img src={logo} alt="" className="brand-logo" />
+          <h1>DevStationnari</h1>
+        </div>
         <button className="btn btn-primary btn-sm" onClick={onAdd}>
           + Add
         </button>

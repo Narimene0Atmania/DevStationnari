@@ -1,13 +1,20 @@
+import { execFileSync } from 'child_process'
 import {
   app,
   dialog,
   Menu,
   nativeImage,
+  nativeTheme,
   shell,
   Tray,
-  type MenuItemConstructorOptions
+  type MenuItemConstructorOptions,
+  type NativeImage
 } from 'electron'
-import icon from '../../resources/icon.png?asset'
+// Electron loads the @1.5x / @2x siblings automatically for high-DPI displays.
+import trayDark from '../../resources/tray/tray-dark.png?asset'
+import trayDarkRunning from '../../resources/tray/tray-dark-running.png?asset'
+import trayWhite from '../../resources/tray/tray-white.png?asset'
+import trayWhiteRunning from '../../resources/tray/tray-white-running.png?asset'
 import type { ServerConfig, StartOptions } from '../shared/types'
 import { manager } from './ipc'
 import { killPort } from './ports'
@@ -15,6 +22,46 @@ import { store } from './store'
 
 let tray: Tray | null = null
 let showWindow: () => void = () => {}
+let taskbarIsLight = false
+let currentIcon = ''
+
+/** Windows themes the taskbar separately from apps, so read its setting directly. */
+function readTaskbarIsLight(): boolean {
+  if (process.platform !== 'win32') return !nativeTheme.shouldUseDarkColors
+  try {
+    const out = execFileSync(
+      'reg',
+      [
+        'query',
+        'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
+        '/v',
+        'SystemUsesLightTheme'
+      ],
+      { windowsHide: true, encoding: 'utf8' }
+    )
+    return /0x1\b/.test(out)
+  } catch {
+    return false // Value missing on older Windows 10 builds: taskbar is dark.
+  }
+}
+
+function trayImage(running: boolean): { key: string; image: NativeImage } {
+  // macOS: a dark template image that the menu bar recolors itself.
+  if (process.platform === 'darwin') {
+    const key = running ? trayDarkRunning : trayDark
+    const image = nativeImage.createFromPath(key)
+    if (!running) image.setTemplateImage(true)
+    return { key, image }
+  }
+  const key = taskbarIsLight
+    ? running
+      ? trayDarkRunning
+      : trayDark
+    : running
+      ? trayWhiteRunning
+      : trayWhite
+  return { key, image: nativeImage.createFromPath(key) }
+}
 
 const isLive = (id: string): boolean => {
   const { status } = manager.getState(id)
@@ -116,6 +163,11 @@ function buildMenu(): Menu {
 export function refreshTray(): void {
   if (!tray) return
   const running = store.list().filter((s) => isLive(s.id)).length
+  const { key, image } = trayImage(running > 0)
+  if (key !== currentIcon) {
+    currentIcon = key
+    tray.setImage(image)
+  }
   tray.setToolTip(
     running
       ? `DevStationnari — ${running} server${running === 1 ? '' : 's'} running`
@@ -127,8 +179,16 @@ export function refreshTray(): void {
 
 export function createTray(onShow: () => void): Tray {
   showWindow = onShow
-  const image = nativeImage.createFromPath(icon).resize({ width: 16, height: 16 })
-  tray = new Tray(image)
+  taskbarIsLight = readTaskbarIsLight()
+  const initial = trayImage(false)
+  currentIcon = initial.key
+  tray = new Tray(initial.image)
+  // Fires when the Windows/macOS theme changes; swap the glyph to stay visible.
+  nativeTheme.on('updated', () => {
+    taskbarIsLight = readTaskbarIsLight()
+    currentIcon = ''
+    refreshTray()
+  })
   tray.on('click', () => showWindow())
   tray.on('double-click', () => showWindow())
   // Build the menu fresh on every right-click so it reflects current servers.

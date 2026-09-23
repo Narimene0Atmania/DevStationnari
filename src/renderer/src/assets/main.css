@@ -93,6 +93,17 @@ a:hover {
   justify-content: space-between;
   padding: 16px 14px 12px;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
 .sidebar-head h1 {
   font-size: 15px;
   letter-spacing: 0.2px;
