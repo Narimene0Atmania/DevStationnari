@@ -37,6 +37,8 @@ async function waitForStatus(m: ServerManager, status: string, ms = 8000): Promi
   }
 }
 
+// Read the manager's own buffer: emitted lines are batched every 50 ms, so they can lag
+// behind a status change that a test has just observed.
 const systemText = (logs: LogLine[]): string =>
   logs
     .filter((l) => l.stream === 'system')
@@ -64,15 +66,15 @@ describe('ServerManager', () => {
   })
 
   it('replaces {port} in the command and reports running once the port opens', async () => {
-    const { m, logs } = makeManager()
+    const { m } = makeManager()
     current = m
     const res = await m.start(config({ port: 0, command: httpServer('{port}') }), {
       portOverride: 47001
     })
     expect(res).toEqual({ ok: true })
     await waitForStatus(m, 'running')
-    expect(systemText(logs)).toContain('listen(47001')
-    expect(systemText(logs)).toContain('{port} replaced and PORT env set')
+    expect(systemText(m.getLogs('srv'))).toContain('listen(47001')
+    expect(systemText(m.getLogs('srv'))).toContain('{port} replaced and PORT env set')
     expect(m.getState('srv')).toMatchObject({ activePort: 47001, portOverride: 47001 })
   })
 
@@ -84,7 +86,7 @@ describe('ServerManager', () => {
   })
 
   it('switches to the port the server announces when it ignores the requested one', async () => {
-    const { m, logs } = makeManager()
+    const { m } = makeManager()
     current = m
     // Vite-style: a LAN line first, then the local URL with the port in bold escape codes.
     const banner =
@@ -92,17 +94,19 @@ describe('ServerManager', () => {
     await m.start(config({ port: 47010, command: httpServer(47011, banner) }))
     await waitForStatus(m, 'running')
     expect(m.getState('srv').activePort).toBe(47011)
-    expect(systemText(logs)).toContain('asked for port 47010 but the server is on 47011')
+    expect(systemText(m.getLogs('srv'))).toContain(
+      'asked for port 47010 but the server is on 47011'
+    )
   })
 
   it('adopts the announced port when none is configured', async () => {
-    const { m, logs } = makeManager()
+    const { m } = makeManager()
     current = m
     await m.start(config({ command: httpServer(47020, 'Listening on http://127.0.0.1:47020') }))
     await sleep(800)
     expect(m.getState('srv').activePort).toBe(47020)
-    expect(systemText(logs)).toContain('Detected port 47020')
-    expect(systemText(logs)).not.toContain('PORT env set')
+    expect(systemText(m.getLogs('srv'))).toContain('Detected port 47020')
+    expect(systemText(m.getLogs('srv'))).not.toContain('PORT env set')
   })
 
   it('reports a port conflict instead of starting', async () => {
@@ -144,7 +148,7 @@ describe('ServerManager', () => {
       const pid = m.getState('srv').pid!
       await m.stop('srv')
       await sleep(100) // let the batched log flush
-      expect(systemText(logs)).toContain('force killing')
+      expect(systemText(m.getLogs('srv'))).toContain('force killing')
       expect(m.getState('srv').status).toBe('stopped')
       await sleep(200)
       expect(() => process.kill(pid, 0)).toThrow()
