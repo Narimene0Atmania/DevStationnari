@@ -19,10 +19,6 @@ Built with Electron + React + TypeScript (electron-vite). Server definitions liv
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | ![Add server dialog](docs/screenshots/add-server.png) | ![Port conflict dialog showing the owning process](docs/screenshots/port-conflict.png) |
 
-| Waiting for the port to open                                          | Running                                                                |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ![A Vite server in the starting state](docs/screenshots/starting.png) | ![A Laravel server in the running state](docs/screenshots/running.png) |
-
 ## How it works
 
 - **Main process** (`src/main`) owns every child process. `serverManager.ts` spawns the
