@@ -1,7 +1,11 @@
+/** Placeholder in a command that is replaced with the port to use. */
+export const PORT_PLACEHOLDER = '{port}'
+
 export interface ServerConfig {
   id: string
   name: string
   cwd: string
+  /** Shell command. May contain `{port}`, replaced with the port the server should use. */
   command: string
   port?: number
   env?: Record<string, string>
@@ -13,8 +17,11 @@ export interface ServerState {
   id: string
   status: ServerStatus
   pid?: number
-  /** Port actually in use (may differ from config.port after "use next free port"). */
+  /** Port the server is (or is expected to be) listening on. May differ from config.port
+   *  after "use next free port", or when the server reported a different port in its output. */
   activePort?: number
+  /** Port override this run was started with, if any; restarts keep it. */
+  portOverride?: number
   exitCode?: number | null
 }
 

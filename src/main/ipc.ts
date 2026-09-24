@@ -47,10 +47,9 @@ export function registerIpc(): void {
   ipcMain.handle('servers:stop', (_e, id: string) => manager.stop(id))
   ipcMain.handle('servers:restart', async (_e, id: string): Promise<StartResult> => {
     // Keep the port override from the previous run, if any.
-    const prev = manager.getState(id).activePort
+    const { portOverride } = manager.getState(id)
     const config = requireConfig(id)
     await manager.stop(id)
-    const portOverride = prev && prev !== config.port ? prev : undefined
     return manager.start(config, { portOverride })
   })
 

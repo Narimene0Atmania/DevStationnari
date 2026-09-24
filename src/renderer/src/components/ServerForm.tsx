@@ -1,28 +1,11 @@
 import { useState } from 'react'
-import type { ServerConfig } from '../../../shared/types'
+import { PORT_PLACEHOLDER, type ServerConfig } from '../../../shared/types'
+import { envToText, textToEnv } from '../lib/env'
 
 interface Props {
   initial?: ServerConfig
   onSave: (config: Omit<ServerConfig, 'id'>) => void
   onCancel: () => void
-}
-
-function envToText(env?: Record<string, string>): string {
-  return Object.entries(env ?? {})
-    .map(([k, v]) => `${k}=${v}`)
-    .join('\n')
-}
-
-function textToEnv(text: string): Record<string, string> | undefined {
-  const env: Record<string, string> = {}
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.trim()
-    if (!line || line.startsWith('#')) continue
-    const eq = line.indexOf('=')
-    if (eq <= 0) continue
-    env[line.slice(0, eq).trim()] = line.slice(eq + 1).trim()
-  }
-  return Object.keys(env).length ? env : undefined
 }
 
 export default function ServerForm({ initial, onSave, onCancel }: Props): React.JSX.Element {
@@ -35,7 +18,9 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
   const portNum = port.trim() ? Number(port) : undefined
   const portValid =
     portNum === undefined || (Number.isInteger(portNum) && portNum > 0 && portNum < 65536)
-  const valid = name.trim() && cwd.trim() && command.trim() && portValid
+  const usesPlaceholder = command.includes(PORT_PLACEHOLDER)
+  const placeholderNeedsPort = usesPlaceholder && portNum === undefined
+  const valid = name.trim() && cwd.trim() && command.trim() && portValid && !placeholderNeedsPort
 
   const browse = async (): Promise<void> => {
     const dir = await window.api.pickFolder()
@@ -86,20 +71,36 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
           <input
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            placeholder="npm run dev"
+            placeholder="npm run dev -- --port {port}"
             className="mono"
           />
+          <span className="muted small">
+            Write <code>{PORT_PLACEHOLDER}</code> where the port goes and it is filled in from the
+            Port field, e.g. <code>npm run dev -- --port {PORT_PLACEHOLDER}</code> or{' '}
+            <code>php artisan serve --port={PORT_PLACEHOLDER}</code>. The PORT environment variable
+            is always set too.
+          </span>
         </label>
 
         <label>
-          Port <span className="muted">(optional — used for conflict checks and readiness)</span>
+          Port{' '}
+          {usesPlaceholder ? (
+            <span className="muted">(required: the command uses {PORT_PLACEHOLDER})</span>
+          ) : (
+            <span className="muted">(optional — used for conflict checks and readiness)</span>
+          )}
           <input
             value={port}
             onChange={(e) => setPort(e.target.value.replace(/[^\d]/g, ''))}
             placeholder="5173"
             inputMode="numeric"
-            className={portValid ? '' : 'invalid'}
+            className={portValid && !placeholderNeedsPort ? '' : 'invalid'}
           />
+          {placeholderNeedsPort ? (
+            <span className="small invalid-text">
+              Enter the port to put in place of {PORT_PLACEHOLDER}.
+            </span>
+          ) : null}
         </label>
 
         <label>

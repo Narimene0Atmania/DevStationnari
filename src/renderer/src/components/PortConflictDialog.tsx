@@ -1,7 +1,8 @@
-import type { PortCheck } from '../../../shared/types'
+import { PORT_PLACEHOLDER, type PortCheck } from '../../../shared/types'
 
 interface Props {
   serverName: string
+  command: string
   conflict: PortCheck
   busy: boolean
   onKill: () => void
@@ -11,6 +12,7 @@ interface Props {
 
 export default function PortConflictDialog({
   serverName,
+  command,
   conflict,
   busy,
   onKill,
@@ -35,8 +37,18 @@ export default function PortConflictDialog({
         </p>
         {suggestedPort ? (
           <p className="muted small">
-            “Use port {suggestedPort}” sets the <code>PORT</code> environment variable. It only
-            works if your command reads it (or you edit the command to pass the port).
+            {command.includes(PORT_PLACEHOLDER) ? (
+              <>
+                “Use port {suggestedPort}” fills in <code>{PORT_PLACEHOLDER}</code> in your command.
+              </>
+            ) : (
+              <>
+                “Use port {suggestedPort}” sets the <code>PORT</code> environment variable. Tools
+                like Vite, Angular and Laravel ignore it and need a flag: edit the command to use{' '}
+                <code>{PORT_PLACEHOLDER}</code>, e.g.{' '}
+                <code>npm run dev -- --port {PORT_PLACEHOLDER}</code>.
+              </>
+            )}
           </p>
         ) : null}
         <div className="modal-actions">
