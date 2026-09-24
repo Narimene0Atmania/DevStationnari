@@ -10,6 +10,14 @@ A lightweight desktop hub to start, stop and watch your local dev servers, whate
 - Kills the whole process tree (`npm run dev` → node → vite), and stops everything on quit
 - Lives in the system tray: closing the window keeps servers running, and the tray menu can start, stop and open them
 
+## Download
+
+**Windows:** [download the latest installer](https://github.com/Narimene0Atmania/DevStationnari/releases/latest)
+([v1.0.0 setup.exe](https://github.com/Narimene0Atmania/DevStationnari/releases/download/v1.0.0/devstationnari-1.0.0-setup.exe), 90 MB).
+
+The installer isn't code-signed yet, so Windows SmartScreen may say "Windows protected your PC".
+Click **More info → Run anyway**.
+
 Built with Electron + React + TypeScript (electron-vite). Server definitions live in
 `%APPDATA%/devstationnari/servers.json`.
 
