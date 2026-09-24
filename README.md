@@ -54,3 +54,6 @@ npm run build:win  # NSIS installer
 ```
 
 CI runs typecheck, lint, tests, formatting and the build on every push.
+
+One test, the SIGTERM-to-SIGKILL escalation in `serverManager.test.ts`, only applies to macOS
+and Linux and is skipped on Windows, where processes are always force-killed.

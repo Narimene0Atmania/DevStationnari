@@ -129,8 +129,10 @@ describe('ServerManager', () => {
     expect(m.getState('srv').status).toBe('stopped')
   })
 
+  // macOS/Linux only. Windows has no SIGTERM: killTree runs `taskkill /F`, which is always
+  // forced, so there is no escalation path to test there and the case is skipped.
   it.skipIf(isWin)(
-    'force-kills a process that ignores SIGTERM',
+    'force-kills a process that ignores SIGTERM (macOS/Linux only; skipped on Windows)',
     async () => {
       const { m, logs } = makeManager()
       current = m
