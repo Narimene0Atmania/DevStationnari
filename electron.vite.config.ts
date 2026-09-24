@@ -11,6 +11,8 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    // Keep off Vite's default 5173, which the dev servers we manage usually want.
+    server: { port: 5199, strictPort: true },
     plugins: [react()]
   }
 })
