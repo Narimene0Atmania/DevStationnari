@@ -100,7 +100,12 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
         </label>
 
         <label>
-          Port <span className="muted">(optional — used for conflict checks and readiness)</span>
+          Port{' '}
+          {usesPlaceholder ? (
+            <span className="muted">(required: the command uses {PORT_PLACEHOLDER})</span>
+          ) : (
+            <span className="muted">(optional — used for conflict checks and readiness)</span>
+          )}
           <input
             value={port}
             onChange={(e) => setPort(e.target.value.replace(/[^\d]/g, ''))}
@@ -110,7 +115,7 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
           />
           {placeholderNeedsPort ? (
             <span className="small invalid-text">
-              The command uses {PORT_PLACEHOLDER}, so a port is required.
+              Enter the port to put in place of {PORT_PLACEHOLDER}.
             </span>
           ) : null}
         </label>
