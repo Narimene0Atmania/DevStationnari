@@ -105,16 +105,20 @@ export async function checkPort(port: number): Promise<PortCheck> {
   return { port, free: false, owner, suggestedPort }
 }
 
-/** Kill the whole process tree rooted at pid. */
-export async function killTree(pid: number): Promise<void> {
+/**
+ * Kill the whole process tree rooted at pid.
+ * Windows always force-kills; on POSIX the signal defaults to SIGTERM so the
+ * caller can escalate to SIGKILL if the process ignores it.
+ */
+export async function killTree(pid: number, signal: NodeJS.Signals = 'SIGTERM'): Promise<void> {
   try {
     if (isWin) {
       await exec('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true })
     } else {
       try {
-        process.kill(-pid, 'SIGTERM')
+        process.kill(-pid, signal)
       } catch {
-        process.kill(pid, 'SIGTERM')
+        process.kill(pid, signal)
       }
     }
   } catch {
@@ -124,6 +128,6 @@ export async function killTree(pid: number): Promise<void> {
 
 export async function killPort(port: number): Promise<boolean> {
   const pids = await findPortPids(port)
-  await Promise.all(pids.map(killTree))
+  await Promise.all(pids.map((pid) => killTree(pid)))
   return pids.length > 0
 }

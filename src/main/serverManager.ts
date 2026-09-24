@@ -6,6 +6,8 @@ const MAX_LOG_LINES = 2000
 const READY_POLL_MS = 500
 const READY_TIMEOUT_MS = 30_000
 const LOG_FLUSH_MS = 50
+const STOP_GRACE_MS = 5000
+const KILL_GRACE_MS = 2000
 // eslint-disable-next-line no-control-regex
 const ANSI = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07]*\x07/g
 
@@ -14,6 +16,14 @@ interface Running {
   stopping: boolean
   exited: Promise<void>
   readyTimer?: NodeJS.Timeout
+}
+
+/** Resolves true once the child has closed, false if the timeout elapses first. */
+function exitedWithin(entry: Running, ms: number): Promise<boolean> {
+  return Promise.race([
+    entry.exited.then(() => true),
+    new Promise<boolean>((r) => setTimeout(() => r(false), ms))
+  ])
 }
 
 type Emit = {
@@ -114,8 +124,14 @@ export class ServerManager {
     const entry = this.running.get(id)
     if (!entry) return
     entry.stopping = true
-    if (entry.child.pid) await killTree(entry.child.pid)
-    await Promise.race([entry.exited, new Promise((r) => setTimeout(r, 5000))])
+    const pid = entry.child.pid
+    if (!pid) return
+    // Ask nicely first, then force-kill anything that ignores SIGTERM.
+    await killTree(pid, 'SIGTERM')
+    if (await exitedWithin(entry, STOP_GRACE_MS)) return
+    this.log(id, 'system', `Did not exit after ${STOP_GRACE_MS / 1000}s; force killing`)
+    await killTree(pid, 'SIGKILL')
+    await exitedWithin(entry, KILL_GRACE_MS)
   }
 
   async stopAll(): Promise<void> {
