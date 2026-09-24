@@ -49,7 +49,8 @@ npm install
 npm run dev        # launch with HMR
 npm run typecheck
 npm run lint
+npm test
 npm run build:win  # NSIS installer
 ```
 
-CI runs typecheck, lint, formatting and the build on every push.
+CI runs typecheck, lint, tests, formatting and the build on every push.

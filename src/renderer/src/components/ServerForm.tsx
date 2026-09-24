@@ -1,28 +1,11 @@
 import { useState } from 'react'
 import { PORT_PLACEHOLDER, type ServerConfig } from '../../../shared/types'
+import { envToText, textToEnv } from '../lib/env'
 
 interface Props {
   initial?: ServerConfig
   onSave: (config: Omit<ServerConfig, 'id'>) => void
   onCancel: () => void
-}
-
-function envToText(env?: Record<string, string>): string {
-  return Object.entries(env ?? {})
-    .map(([k, v]) => `${k}=${v}`)
-    .join('\n')
-}
-
-function textToEnv(text: string): Record<string, string> | undefined {
-  const env: Record<string, string> = {}
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.trim()
-    if (!line || line.startsWith('#')) continue
-    const eq = line.indexOf('=')
-    if (eq <= 0) continue
-    env[line.slice(0, eq).trim()] = line.slice(eq + 1).trim()
-  }
-  return Object.keys(env).length ? env : undefined
 }
 
 export default function ServerForm({ initial, onSave, onCancel }: Props): React.JSX.Element {
