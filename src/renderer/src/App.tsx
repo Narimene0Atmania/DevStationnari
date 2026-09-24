@@ -205,6 +205,7 @@ function App(): React.JSX.Element {
       {conflict ? (
         <PortConflictDialog
           serverName={conflict.server.name}
+          command={conflict.server.command}
           conflict={conflict.check}
           busy={busy}
           onKill={resolveKill}

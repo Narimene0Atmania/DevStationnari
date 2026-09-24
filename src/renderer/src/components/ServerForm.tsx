@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ServerConfig } from '../../../shared/types'
+import { PORT_PLACEHOLDER, type ServerConfig } from '../../../shared/types'
 
 interface Props {
   initial?: ServerConfig
@@ -35,7 +35,9 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
   const portNum = port.trim() ? Number(port) : undefined
   const portValid =
     portNum === undefined || (Number.isInteger(portNum) && portNum > 0 && portNum < 65536)
-  const valid = name.trim() && cwd.trim() && command.trim() && portValid
+  const usesPlaceholder = command.includes(PORT_PLACEHOLDER)
+  const placeholderNeedsPort = usesPlaceholder && portNum === undefined
+  const valid = name.trim() && cwd.trim() && command.trim() && portValid && !placeholderNeedsPort
 
   const browse = async (): Promise<void> => {
     const dir = await window.api.pickFolder()
@@ -86,9 +88,15 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
           <input
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            placeholder="npm run dev"
+            placeholder="npm run dev -- --port {port}"
             className="mono"
           />
+          <span className="muted small">
+            Write <code>{PORT_PLACEHOLDER}</code> where the port goes and it is filled in from the
+            Port field, e.g. <code>npm run dev -- --port {PORT_PLACEHOLDER}</code> or{' '}
+            <code>php artisan serve --port={PORT_PLACEHOLDER}</code>. The PORT environment variable
+            is always set too.
+          </span>
         </label>
 
         <label>
@@ -98,8 +106,13 @@ export default function ServerForm({ initial, onSave, onCancel }: Props): React.
             onChange={(e) => setPort(e.target.value.replace(/[^\d]/g, ''))}
             placeholder="5173"
             inputMode="numeric"
-            className={portValid ? '' : 'invalid'}
+            className={portValid && !placeholderNeedsPort ? '' : 'invalid'}
           />
+          {placeholderNeedsPort ? (
+            <span className="small invalid-text">
+              The command uses {PORT_PLACEHOLDER}, so a port is required.
+            </span>
+          ) : null}
         </label>
 
         <label>

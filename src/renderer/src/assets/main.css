@@ -356,6 +356,12 @@ textarea:focus {
 input.invalid {
   border-color: var(--danger);
 }
+.invalid-text {
+  color: var(--danger);
+}
+.modal label .small {
+  line-height: 1.4;
+}
 textarea {
   resize: vertical;
 }

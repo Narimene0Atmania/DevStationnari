@@ -35,9 +35,12 @@ Built with Electron + React + TypeScript (electron-vite). Server definitions liv
 - **Renderer** (`src/renderer`) is a plain React app that subscribes to status and log
   events and never touches the OS directly.
 
-The "Use port N" option sets the `PORT` environment variable. It only helps if the command
-reads it (Laravel, Next.js, Express and most Node servers do; Vite does not, so pass
-`--port` in the command instead).
+**Ports.** Write `{port}` in the command wherever the port goes, e.g.
+`npm run dev -- --port {port}` or `php artisan serve --port={port}`. The Port field fills it in,
+and "use next free port" swaps in the new number. The `PORT` environment variable is set too,
+which is enough for most Node servers. If a server ignores both and prints a different local
+URL, the app notices, reports the real port, and warns you in the log instead of waiting on the
+wrong one.
 
 ## Development
 

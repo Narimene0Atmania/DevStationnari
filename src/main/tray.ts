@@ -127,9 +127,9 @@ function buildMenu(): Menu {
             {
               label: 'Restart',
               click: async () => {
-                const prev = manager.getState(s.id).activePort
+                const { portOverride } = manager.getState(s.id)
                 await manager.stop(s.id)
-                await startFromTray(s, prev && prev !== s.port ? { portOverride: prev } : undefined)
+                await startFromTray(s, portOverride ? { portOverride } : undefined)
               }
             },
             { label: 'Stop', click: () => manager.stop(s.id) }
